@@ -25,3 +25,17 @@ dev confusion
 # approx 6m
 ```
 
+## nn models
+
+lots more variants explored in 
+[the theano version of this project](https://github.com/matpalm/snli_nn).
+
+### unidir
+
+first model is 
+* a unidir gru rnn over each sentence
+* concatted to a single logistic regression to a 3way softmax
+
+```
+usage: ./nn_baseline.py --num-from-train=10 --num-epochs=1 --embedding-dim=5 --hidden-dim=5 --batch-size=3
+```
