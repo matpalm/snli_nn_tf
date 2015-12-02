@@ -33,9 +33,38 @@ lots more variants explored in
 ### unidir
 
 first model is 
-* a unidir gru rnn over each sentence
-* concatted to a single logistic regression to a 3way softmax
+* a bidirictional gru rnn over each sentence
+* concatted final states -> couple layer mlp -> 3way logisitic regression
 
 ```
-usage: ./nn_baseline.py --num-from-train=10 --num-epochs=1 --embedding-dim=5 --hidden-dim=5 --batch-size=3
+$ ./nn_baseline.py --help
+usage: nn_baseline.py [-h] [--train-set TRAIN_SET]
+                      [--num-from-train NUM_FROM_TRAIN] [--dev-set DEV_SET]
+                      [--num-from-dev NUM_FROM_DEV]
+                      [--dev-run-freq DEV_RUN_FREQ] [--batch-size BATCH_SIZE]
+                      [--hack-max-len HACK_MAX_LEN] [--hidden-dim HIDDEN_DIM]
+                      [--embedding-dim EMBEDDING_DIM]
+                      [--num-epochs NUM_EPOCHS] [--optimizer OPTIMIZER]
+                      [--learning-rate LEARNING_RATE] [--momentum MOMENTUM]
+                      [--mlp-config MLP_CONFIG]
+
+optional arguments:
+  -h, --help                       show this help message and exit
+  --train-set TRAIN_SET
+  --num-from-train NUM_FROM_TRAIN  number of batches to read from train. -1 => all
+  --dev-set DEV_SET
+  --num-from-dev NUM_FROM_DEV      number of batches to read from dev. -1 => all
+  --dev-run-freq DEV_RUN_FREQ      frequency (in num batches trained) to run against dev set
+  --batch-size BATCH_SIZE          batch size
+  --hack-max-len HACK_MAX_LEN      hack; need to do bucketing, for now just ignore long egs
+  --hidden-dim HIDDEN_DIM          hidden node dimensionality
+  --embedding-dim EMBEDDING_DIM    embedding node dimensionality
+  --num-epochs NUM_EPOCHS          number of epoches to run. -1 => forever
+  --optimizer OPTIMIZER            optimizer to use; some baseclass of tr.train.Optimizer
+  --learning-rate LEARNING_RATE
+  --momentum MOMENTUM              momentum (for MomentumOptimizer)
+  --mlp-config MLP_CONFIG          pre classifier mlp config; array describing #hidden
+                                   nodes per layer. eg [50,50,20] denotes 3 hidden
+                                   layers, with 50, 50 and 20 nodes. a value of []
+                                   denotes no MLP before classifier
 ```
