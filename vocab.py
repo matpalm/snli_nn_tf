@@ -3,8 +3,8 @@ class Vocab(object):
     def __init__(self, vocab_file=None):
         self.token_id = {}
         self.id_token = {}
-        self.UNK_ID = 0
-        self.PAD_ID = 1
+        self.PAD_ID = 0
+        self.UNK_ID = 1
         self.seq = 2
         self.vocab_file = vocab_file
         if vocab_file:

@@ -2,6 +2,7 @@ from collections import Counter
 import json
 import numpy as np
 import time
+import tensorflow as tf
 
 def split_binary_parse(parse, include_parenthesis=False):
     tokens = []
@@ -36,7 +37,7 @@ def label_for(eg):  # TODO: uber clumstastic :/
     except ValueError:
         return None
 
-def load_data(file, max_records, max_len, batch_size, vocab):
+def load_data(file, vocab, update_vocab, max_records, max_len, batch_size):
     stats = Counter()
 
     # final batched data.
@@ -60,8 +61,10 @@ def load_data(file, max_records, max_len, batch_size, vocab):
             stats['n_ignore_long'] += 1
             continue
 
-        s1_ids = vocab.ids_for_tokens(s1)
-        s2_ids = vocab.ids_for_tokens(s2)
+        s1_ids = vocab.ids_for_tokens(s1, update_vocab)
+        s2_ids = vocab.ids_for_tokens(s2, update_vocab)
+
+        # TODO: urgh. this is horrible; dup data and things that could be done on gpu (padding, reversal, single feed_dict input)
 
         s1_f, s1_b, s1_m = padded_forwards_backwards_and_mask(s1_ids, pad_length=max_len, pad_id=vocab.PAD_ID)
         s2_f, s2_b, s2_m = padded_forwards_backwards_and_mask(s2_ids, pad_length=max_len, pad_id=vocab.PAD_ID)
@@ -100,3 +103,19 @@ def accuracy(confusion):
 def dts():
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
+def mean_sd(v):
+    return {"mean": float(np.mean(v)), "sd": float(np.std(v))}
+
+def optimizer(opts):
+    lr = float(opts.learning_rate)
+    assert lr > 0, "need to set --learning-rate (>0)"
+    if opts.optimizer == "GradientDescentOptimizer":
+        return tf.train.GradientDescentOptimizer(lr)
+    elif opts.optimizer == "AdamOptimizer":
+        return tf.train.AdamOptimizer(learning_rate=lr)
+    elif opts.optimizer == "MomentumOptimizer":
+        m = float(opts.momentum)
+        assert m > 0, "MomentumOptimizer requires --momentum (>0)"
+        return tf.train.MomentumOptimizer(learning_rate=lr, momentum=m)
+    else:
+        raise Exception("unknown optimizer [%s]" % opts.optimizer)
