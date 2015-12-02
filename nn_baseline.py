@@ -76,7 +76,6 @@ log("building model")
 # TODO: explicitly did sX_f/b seperately for ease of data gen, could construct these in tf graph & just have s1, s2
 s1_f = tf.placeholder(tf.int32, [batch_size, seq_len])  # forward over s1
 s1_b = tf.placeholder(tf.int32, [batch_size, seq_len])  # backwards over s1
-s1_m = tf.placeholder(tf.int32, [batch_size, seq_len])  # activation mask for s1
 s2_f = tf.placeholder(tf.int32, [batch_size, seq_len])
 s2_b = tf.placeholder(tf.int32, [batch_size, seq_len])
 inputs = [s1_f, s1_b, s2_f, s2_b]
