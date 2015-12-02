@@ -136,12 +136,6 @@ for n, num_hidden_nodes in enumerate(eval(opts.mlp_config)):
     last_layer_size = num_hidden_nodes
 logits = mlp_layer("logits", last_layer, last_layer_size, 3, include_nonlinearity=False)
 
-# run these through a logisitic regression
-#with tf.variable_scope("lr"):
-#    projection = tf.get_variable("projection", [hidden_dim*4, 3])  # 3 labels
-#    bias = tf.get_variable("bias", [3], initializer=tf.constant_initializer(0.0))
-#    logits = tf.matmul(concatted_final_states, projection) + bias
-
 # calculate cost and assign trainer
 labels = tf.placeholder(tf.float32, [batch_size, 3])
 cross_entropy = tf.nn.softmax_cross_entropy_with_logits(logits, labels)
