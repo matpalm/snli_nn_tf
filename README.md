@@ -30,7 +30,7 @@ dev confusion
 lots more variants explored in 
 [the theano version of this project](https://github.com/matpalm/snli_nn).
 
-### unidir
+### bidir grus -> concat -> mlp -> logreg
 
 first model is 
 * a bidirictional gru rnn over each sentence
