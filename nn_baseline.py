@@ -2,15 +2,16 @@
 import argparse
 import json
 import numpy as np
-import random
-from stats import Stats
 import os
+import random
 from sklearn.metrics import confusion_matrix
+from stats import Stats
 import sys
 import tensorflow as tf
 from tensorflow.models.rnn import linear
 from tensorflow.models.rnn import rnn
 from tensorflow.models.rnn import rnn_cell
+import time
 import util
 from vocab import Vocab
 
@@ -42,6 +43,10 @@ parser.add_argument("--mlp-config", default="[35]",
                     help="pre classifier mlp config; array describing #hidden nodes"
                          + " per layer. eg [50,50,20] denotes 3 hidden layers, with 50, 50 and 20"
                          + " nodes. a value of [] denotes no MLP before classifier")
+parser.add_argument("--restore-ckpt", default="", help="if set, restore from this ckpt file")
+parser.add_argument("--ckpt-dir", default="", help="root dir to save ckpts. blank => don't save ckpts")
+parser.add_argument("--ckpt-freq", default=100000, type=int,
+                    help='frequency (in num batches trained) to dump ckpt to --ckpt-dir')
 
 opts = parser.parse_args()
 print >>sys.stderr, opts
@@ -163,24 +168,53 @@ def stats_from_dev_set(stats):
     stats.set_dev_accuracy(dev_accuracy)
     print "dev confusion\n %s (%s)" % (dev_c, dev_accuracy)
 
+
+RUN_ID = "RUN_%s_%s" % (int(time.time()), os.getpid())
+
 log("creating session")
 sess = tf.Session()
 sess.run(tf.initialize_all_variables())
 
+# setup saver
+saver = None
+if opts.restore_ckpt or opts.ckpt_dir:
+    saver = tf.train.Saver()
+if opts.restore_ckpt:
+    log("restoring from ckpt %s" % opts.restore_ckpt)
+    saver.restore(sess, opts.restore_ckpt)
+if opts.ckpt_dir:
+    os.mkdir(os.path.join(opts.ckpt_dir, RUN_ID))
+
+stats = Stats(os.path.basename(__file__), opts, RUN_ID)
+
+def save_ckpt():
+    ckpt_file = str(int(time.time()))
+    stats.last_ckpt = ckpt_file
+    full_ckpt_path = os.path.join(opts.ckpt_dir, RUN_ID, ckpt_file)
+    saver.save(sess, full_ckpt_path)
+    log("ckpt saved to %s" % full_ckpt_path)
+
 log("training")
-stats = Stats(os.path.basename(__file__), opts)
 epoch = 0
 egs = zip(train_x, train_y)
+last_ckpt = ""
 while epoch != int(opts.num_epochs):
     random.shuffle(egs)
     for n, (eg, true_labels) in enumerate(egs):
+        # train a batch
         # TODO: move this into ONE matrix and slice these things out.
-        # TODO: make use of hidden->hidden masks
+        # TODO: move away from feeddict and to queueing egs.
         batch_cost, _opt = sess.run([cost, optimizer],
                                     feed_dict=eg_and_label_to_feeddict(eg, true_labels))
         stats.record_training_cost(batch_cost)
+        # occasionally check dev set
         if stats.n_batches_trained % opts.dev_run_freq == 0:
             stats_from_dev_set(stats)
             stats.flush_to_stdout(epoch)
+        # occasionally write a checkpoint
+        if opts.ckpt_dir and stats.n_batches_trained % opts.ckpt_freq == 0:
+            save_ckpt()
     epoch += 1
 
+if opts.ckpt_dir:
+    save_ckpt()

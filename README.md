@@ -46,7 +46,8 @@ usage: nn_baseline.py [-h] [--train-set TRAIN_SET]
                       [--embedding-dim EMBEDDING_DIM]
                       [--num-epochs NUM_EPOCHS] [--optimizer OPTIMIZER]
                       [--learning-rate LEARNING_RATE] [--momentum MOMENTUM]
-                      [--mlp-config MLP_CONFIG]
+                      [--mlp-config MLP_CONFIG] [--restore-ckpt RESTORE_CKPT]
+                      [--ckpt-dir CKPT_DIR] [--ckpt-freq CKPT_FREQ]
 
 optional arguments:
   -h, --help                       show this help message and exit
@@ -67,4 +68,7 @@ optional arguments:
                                    nodes per layer. eg [50,50,20] denotes 3 hidden
                                    layers, with 50, 50 and 20 nodes. a value of []
                                    denotes no MLP before classifier
+  --restore-ckpt RESTORE_CKPT      if set, restore from this ckpt file
+  --ckpt-dir CKPT_DIR              root dir to save ckpts. blank => don't save ckpts
+  --ckpt-freq CKPT_FREQ            frequency (in num batches trained) to dump ckpt to --ckpt-dir
 ```

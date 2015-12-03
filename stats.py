@@ -6,12 +6,12 @@ import time
 import util
 
 class Stats(object):
-    def __init__(self, model, opts):
+    def __init__(self, model, opts, run_id):
         self.start_time = int(time.time())
         self.n_batches_trained = 0
-        self.base_stats = {"model": model,
-                           "run": "RUN_%s_%s" % (self.start_time, os.getpid())}
+        self.base_stats = {"model": model, "run": run_id}
         self.batch_size = int(opts.batch_size)
+        self.last_ckpt = ""
         for opt in dir(opts):
             if not opt.startswith("_"):
                 self.base_stats[opt] = getattr(opts, opt)
@@ -44,7 +44,8 @@ class Stats(object):
                       "elapsed_time": int(time.time()) - self.start_time,
                       "train_cost": util.mean_sd(self.train_costs),
                       "dev_cost": util.mean_sd(self.dev_costs),
-                      "dev_acc": self.dev_accuracy})
+                      "dev_acc": self.dev_accuracy,
+                      "last_ckpt": self.last_ckpt})
         if self.norms:
             stats.update({"norms": self.norms})
         print "STATS\t%s" % json.dumps(stats)
