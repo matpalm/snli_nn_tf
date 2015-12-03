@@ -30,15 +30,15 @@ parser.add_argument("--hack-max-len", default=25, type=int,
                     help="hack; need to do bucketing, for now just ignore long egs")
 parser.add_argument('--hidden-dim', default=100, type=int,
                     help='hidden node dimensionality')
-parser.add_argument('--embedding-dim', default=20, type=int,
+parser.add_argument('--embedding-dim', default=100, type=int,
                     help='embedding node dimensionality')
 parser.add_argument("--num-epochs", default=-1, type=int,
                     help='number of epoches to run. -1 => forever')
-parser.add_argument("--optimizer", default="AdamOptimizer",
-                    help='optimizer to use; some baseclass of tr.train.Optimizer')
+parser.add_argument("--optimizer", default="GradientDescentOptimizer",
+                    help='optimizer to use; some baseclass of tf.train.Optimizer')
 parser.add_argument("--learning-rate", default=0.01, type=float)
 parser.add_argument("--momentum", default=0, type=float, help="momentum (for MomentumOptimizer)")
-parser.add_argument("--mlp-config", default="[200,200]",
+parser.add_argument("--mlp-config", default="[35]",
                     help="pre classifier mlp config; array describing #hidden nodes"
                          + " per layer. eg [50,50,20] denotes 3 hidden layers, with 50, 50 and 20"
                          + " nodes. a value of [] denotes no MLP before classifier")
@@ -122,14 +122,13 @@ concatted_final_states = tf.concat(1, final_states)  # (batch_size, hidden_dim*4
 # eg opts.mlp_config = [200, 200] => two hidden layers; concatted states -> 200d -> 200d -> 3d
 # eg opts.mlp_config = [] => no hidden layers; just concatted states -> 3d
 def mlp_layer(name, input, input_dim, output_dim, include_nonlinearity=True):
-    log("adding a %dd -> %dd ; layer (%s)" % (input_dim, output_dim, name))
     with tf.variable_scope(name):
         projection = tf.get_variable("projection", [input_dim, output_dim])
         bias = tf.get_variable("bias", [1, output_dim], initializer=tf.constant_initializer(0.0))
         output = tf.matmul(input, projection) + bias  # note: bias is broadcast across leading batch dim
         return tf.nn.relu(output) if include_nonlinearity else output
 last_layer = concatted_final_states
-last_layer_size = hidden_dim*4
+last_layer_size = hidden_dim * 4
 for n, num_hidden_nodes in enumerate(eval(opts.mlp_config)):
     last_layer = mlp_layer("mlp_hidden_%d" % n, last_layer, last_layer_size, num_hidden_nodes)
     last_layer_size = num_hidden_nodes
@@ -154,7 +153,7 @@ def stats_from_dev_set(stats):
     predicteds, actuals = [], []
     for eg, true_labels in zip(dev_x, dev_y):
         b_cost, b_predicted = sess.run([cost, predicted],
-                                    feed_dict=eg_and_label_to_feeddict(eg, true_labels))
+                                       feed_dict=eg_and_label_to_feeddict(eg, true_labels))
         stats.record_dev_cost(b_cost)
         for p, a in zip(b_predicted, true_labels):
             predicteds.append(np.argmax(p))
