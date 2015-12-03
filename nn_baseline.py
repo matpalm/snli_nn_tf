@@ -179,7 +179,7 @@ while epoch != int(opts.num_epochs):
         batch_cost, _opt = sess.run([cost, optimizer],
                                     feed_dict=eg_and_label_to_feeddict(eg, true_labels))
         stats.record_training_cost(batch_cost)
-        if stats.n_egs_trained % opts.dev_run_freq == 0:
+        if stats.n_batches_trained % opts.dev_run_freq == 0:
             stats_from_dev_set(stats)
             stats.flush_to_stdout(epoch)
     epoch += 1

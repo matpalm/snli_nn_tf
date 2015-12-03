@@ -8,9 +8,10 @@ import util
 class Stats(object):
     def __init__(self, model, opts):
         self.start_time = int(time.time())
-        self.n_egs_trained = 0
+        self.n_batches_trained = 0
         self.base_stats = {"model": model,
                            "run": "RUN_%s_%s" % (self.start_time, os.getpid())}
+        self.batch_size = int(opts.batch_size)
         for opt in dir(opts):
             if not opt.startswith("_"):
                 self.base_stats[opt] = getattr(opts, opt)
@@ -24,7 +25,7 @@ class Stats(object):
 
     def record_training_cost(self, cost):
         self.train_costs.append(cost)
-        self.n_egs_trained += 1
+        self.n_batches_trained += 1
 
     def record_dev_cost(self, cost):
         self.dev_costs.append(cost)
@@ -39,7 +40,7 @@ class Stats(object):
     def flush_to_stdout(self, epoch):
         stats = dict(self.base_stats)
         stats.update({"dts_h": util.dts(), "epoch": epoch,
-                      "n_egs_trained": self.n_egs_trained,
+                      "n_egs_trained": self.n_batches_trained * self.batch_size,
                       "elapsed_time": int(time.time()) - self.start_time,
                       "train_cost": util.mean_sd(self.train_costs),
                       "dev_cost": util.mean_sd(self.dev_costs),
