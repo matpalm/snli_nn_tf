@@ -47,6 +47,7 @@ parser.add_argument("--restore-ckpt", default="", help="if set, restore from thi
 parser.add_argument("--ckpt-dir", default="", help="root dir to save ckpts. blank => don't save ckpts")
 parser.add_argument("--ckpt-freq", default=100000, type=int,
                     help='frequency (in num batches trained) to dump ckpt to --ckpt-dir')
+parser.add_argument('--disable-gpu', action='store_true', help='if set we only run on cpu')
 
 opts = parser.parse_args()
 print >>sys.stderr, opts
@@ -173,6 +174,10 @@ RUN_ID = "RUN_%s_%s" % (int(time.time()), os.getpid())
 
 log("creating session")
 sess = tf.Session()
+c = tf.ConfigProto()
+if opts.disable_gpu:
+    c.device_count['GPU'] = 0
+sess = tf.Session(config=c)
 sess.run(tf.initialize_all_variables())
 
 # setup saver
