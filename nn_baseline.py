@@ -48,6 +48,13 @@ parser.add_argument("--ckpt-dir", default="", help="root dir to save ckpts. blan
 parser.add_argument("--ckpt-freq", default=100000, type=int,
                     help='frequency (in num batches trained) to dump ckpt to --ckpt-dir')
 parser.add_argument('--disable-gpu', action='store_true', help='if set we only run on cpu')
+parser.add_argument('--initial-embeddings',
+                    help='initial embeddings npy file. requires --vocab-file')
+parser.add_argument('--vocab-file',
+                    help='vocab (token -> idx) for embeddings,'
+                         ' required if using --initial-embeddings')
+parser.add_argument('--dont-train-embeddings', action='store_true',
+                    help='if set don\'t backprop to embeddings')
 
 opts = parser.parse_args()
 print >>sys.stderr, opts
@@ -56,12 +63,15 @@ hidden_dim = int(opts.hidden_dim)
 embedding_dim = int(opts.embedding_dim)
 batch_size = int(opts.batch_size)
 
+# check that if one of --vocab--file or --initial_embeddings is set, they are both set.
+assert not ((opts.vocab_file is None) ^ (opts.initial_embeddings is None)), "must set both --vocab-file & --initial-embeddings"
+
 def log(s):
     print >>sys.stderr, util.dts(), s
 
 # build vocab and load data
 log("loading data")
-vocab = Vocab() #opts.vocab_file)
+vocab = Vocab(opts.vocab_file)
 train_x, train_y, train_stats = util.load_data(opts.train_set, vocab,
                                                update_vocab=True,
                                                max_records=opts.num_from_train,
@@ -90,7 +100,12 @@ inputs = [s1_f, s1_b, s2_f, s2_b]
 # for now using the same embedding matrix
 with tf.device("/cpu:0"):
     vs, ed = vocab.size(), embedding_dim
-    embeddings = tf.get_variable("embeddings", [vs, ed])
+    embeddings = tf.Variable(tf.random_normal([vs, ed]), name="embeddings")
+    if opts.initial_embeddings:
+        e = np.load(opts.initial_embeddings)
+        assert e.shape[0] == vocab.size(), "pretrained embeddings size (%s) != vocab size (%s)" % (e.shape[0], vocab.size())
+        assert e.shape[1] == embedding_dim, "pretrained embedding dim (%s) != configured embedding dim (%s)" % (e.shape[1], embedding_dim)
+        embeddings.assign(e)
     # zero out the 0th entry (PAD_ID) (we do this with the assumption
     # that network will emit 0 hidden state for zero hidden t-1 state
     # & zero embedding.)
@@ -103,6 +118,8 @@ def embedded_sequence(seq):
         # TODO: do all 4 sequences in one hit.
         # TODO: sX_f and sX_b embed the same sequences, just do them once
         embedded_inputs = tf.nn.embedding_lookup(embeddings, seq)  # (batch_size, seq_len, embedding_dim)
+    if opts.dont_train_embeddings:
+        embedded_inputs = tf.stop_gradient(embedded_inputs)
     # unpack on seq_len dimension (1) into an array of len seq_len
     inputs = tf.split(1, seq_len, embedded_inputs)  # [(batch_size, 1, embedding_dim), ...]
     # squeeze each element (ie throw away "empty dimension"). collapses from 3d to 2d

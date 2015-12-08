@@ -48,6 +48,10 @@ usage: nn_baseline.py [-h] [--train-set TRAIN_SET]
                       [--learning-rate LEARNING_RATE] [--momentum MOMENTUM]
                       [--mlp-config MLP_CONFIG] [--restore-ckpt RESTORE_CKPT]
                       [--ckpt-dir CKPT_DIR] [--ckpt-freq CKPT_FREQ]
+                      [--disable-gpu]
+                      [--initial-embeddings INITIAL_EMBEDDINGS]
+                      [--vocab-file VOCAB_FILE] [--dont-train-embeddings]
+
 
 optional arguments:
   -h, --help                       show this help message and exit
@@ -71,4 +75,30 @@ optional arguments:
   --restore-ckpt RESTORE_CKPT      if set, restore from this ckpt file
   --ckpt-dir CKPT_DIR              root dir to save ckpts. blank => don't save ckpts
   --ckpt-freq CKPT_FREQ            frequency (in num batches trained) to dump ckpt to --ckpt-dir
+  --disable-gpu                    if set we only run on cpu
+  --initial-embeddings INITIAL     initial embeddings npy file. requires --vocab-file
+  --vocab-file VOCAB_FILE          vocab (token -> idx) for embeddings, required if using --initial-embeddings
+  --dont-train-embeddings          if set don't backprop to embeddings
 ```
+
+### precalculated embeddings
+
+to use pretrained embeddings we first build a vocab mapping tokens -> row ids
+
+```
+time cat data/snli_1.0_train.jsonl | ./generate_vocab_from_snli.py  > vocab.tsv
+```
+
+we then convert glove embeddings to an npy matrix using the above vocab. for entries
+not in the glove data we generate a random vector scaled to the median length of
+the observed glove embeddings. ids 0 and 1 are "reserved" for PAD and UNK where PAD
+is a zero vector.
+
+```
+time ./convert_glove_embeddings.py \
+ --vocab vocab.tsv \
+ --glove-data glove/glove.6B.300d.txt \
+ --npy glove/snli_glove.npy \
+ --random-projection-dimensionality 100
+```
+

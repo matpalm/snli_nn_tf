@@ -13,7 +13,10 @@ class Vocab(object):
                 idx = int(idx)
                 assert token not in self.token_id, "dup entry for token [%s]" % token
                 assert idx not in self.id_token, "dup entry for idx [%s]" % idx
-                assert idx != 0, "expecting to reserve 0 id for UNK"
+                if idx == 0:
+                    assert token == "PAD", "expect id 0 to be [PAD] not [%s]" % token
+                if idx == 1:
+                    assert token == "UNK", "expect id 1 to be [UNK] not [%s]" % token
                 self.token_id[token] = idx
                 self.id_token[idx] = token
 

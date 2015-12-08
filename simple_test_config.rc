@@ -5,4 +5,4 @@ export SET=data/snli_1.0_train.jsonl
 export ARGS="--train-set=$SET --dev-set=$SET --num-from-train=$EGS --num-from-dev=$EGS"
 export ARGS="$ARGS --dev-run-freq=1 --batch-size=2 --num-epochs=10 --optimizer=AdamOptimizer"
 export ARGS="$ARGS --embedding-dim=$DIM --hidden-dim=$DIM"
-export ARGS="$ARGS --mlp-config=[]"
+export ARGS="$ARGS --mlp-config=[] --disable-gpu"
