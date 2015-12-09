@@ -4,6 +4,11 @@ note: port of [snli hacking in theano](https://github.com/matpalm/snli_nn)
 
 hacking with the [Stanford Natural Language Inference corpus](http://nlp.stanford.edu/projects/snli/). problem is to decide if two sentences are neutral, contradict each other or the first entails the second.
 
+model | dev accuracy
+----- |  --------
+log_reg_baseline.py | 0.667
+nn bidir gru -> concat -> mlp | 0.780
+
 ## baseline
 
 simple logistic regression using token features, tokens from sentence 1 prepended with
@@ -102,3 +107,7 @@ time ./convert_glove_embeddings.py \
  --random-projection-dimensionality 100
 ```
 
+using pretrained embeddings gives a big bump in initial convergence but randomly picked ones overtake
+them (quite a bit) later on.
+
+![baseline](imgs/v1.png?raw=true "baseline; random vs glove")
