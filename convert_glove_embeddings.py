@@ -20,6 +20,7 @@ opts = parser.parse_args()
 
 # slurp vocab entries. assume idxs are valid, ie 1 < i < |v|, no dups, no gaps, etc
 # (recall reserving 0 for UNK)
+# TODO: use vocab.py
 vocab = {}  # token => idx
 for line in open(opts.vocab, "r"):
     token, idx = line.strip().split("\t")

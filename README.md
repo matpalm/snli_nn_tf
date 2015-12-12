@@ -42,48 +42,82 @@ first model is
 * concatted final states -> couple layer mlp -> 3way logisitic regression
 
 ```
-$ ./nn_baseline.py --help
-usage: nn_baseline.py [-h] [--train-set TRAIN_SET]
-                      [--num-from-train NUM_FROM_TRAIN] [--dev-set DEV_SET]
-                      [--num-from-dev NUM_FROM_DEV]
-                      [--dev-run-freq DEV_RUN_FREQ] [--batch-size BATCH_SIZE]
-                      [--hack-max-len HACK_MAX_LEN] [--hidden-dim HIDDEN_DIM]
-                      [--embedding-dim EMBEDDING_DIM]
-                      [--num-epochs NUM_EPOCHS] [--optimizer OPTIMIZER]
-                      [--learning-rate LEARNING_RATE] [--momentum MOMENTUM]
-                      [--mlp-config MLP_CONFIG] [--restore-ckpt RESTORE_CKPT]
-                      [--ckpt-dir CKPT_DIR] [--ckpt-freq CKPT_FREQ]
-                      [--disable-gpu]
-                      [--initial-embeddings INITIAL_EMBEDDINGS]
-                      [--vocab-file VOCAB_FILE] [--dont-train-embeddings]
-
+$ ./nn_train.py --help
+usage: nn_train.py [-h] [--train-set TRAIN_SET]
+                   [--num-from-train NUM_FROM_TRAIN] [--dev-set DEV_SET]
+                   [--num-from-dev NUM_FROM_DEV] [--dev-run-freq DEV_RUN_FREQ]
+                   [--batch-size BATCH_SIZE] [--num-epochs NUM_EPOCHS]
+                   [--optimizer OPTIMIZER] [--learning-rate LEARNING_RATE]
+                   [--momentum MOMENTUM] [--restore-ckpt RESTORE_CKPT]
+                   [--ckpt-dir CKPT_DIR] [--ckpt-freq CKPT_FREQ]
+                   [--disable-gpu] [--input-vocab-file INPUT_VOCAB_FILE]
+                   [--output-vocab-file OUTPUT_VOCAB_FILE] [--seq-len SEQ_LEN]
+                   [--hidden-dim HIDDEN_DIM] [--embedding-dim EMBEDDING_DIM]
+                   [--mlp-config MLP_CONFIG]
+                   [--initial-embeddings INITIAL_EMBEDDINGS]
+                   [--dont-train-embeddings]
 
 optional arguments:
-  -h, --help                       show this help message and exit
+  -h, --help            show this help message and exit
   --train-set TRAIN_SET
-  --num-from-train NUM_FROM_TRAIN  number of batches to read from train. -1 => all
+  --num-from-train NUM_FROM_TRAIN
+                        number of batches to read from train. -1 => all
   --dev-set DEV_SET
-  --num-from-dev NUM_FROM_DEV      number of batches to read from dev. -1 => all
-  --dev-run-freq DEV_RUN_FREQ      frequency (in num batches trained) to run against dev set
-  --batch-size BATCH_SIZE          batch size
-  --hack-max-len HACK_MAX_LEN      hack; need to do bucketing, for now just ignore long egs
-  --hidden-dim HIDDEN_DIM          hidden node dimensionality
-  --embedding-dim EMBEDDING_DIM    embedding node dimensionality
-  --num-epochs NUM_EPOCHS          number of epoches to run. -1 => forever
-  --optimizer OPTIMIZER            optimizer to use; some baseclass of tr.train.Optimizer
+  --num-from-dev NUM_FROM_DEV
+                        number of batches to read from dev. -1 => all
+  --dev-run-freq DEV_RUN_FREQ
+                        frequency (in num batches trained) to run against dev
+                        set
+  --batch-size BATCH_SIZE
+                        batch size
+  --num-epochs NUM_EPOCHS
+                        number of epoches to run. -1 => forever
+  --optimizer OPTIMIZER
+                        optimizer to use; some baseclass of tf.train.Optimizer
   --learning-rate LEARNING_RATE
-  --momentum MOMENTUM              momentum (for MomentumOptimizer)
-  --mlp-config MLP_CONFIG          pre classifier mlp config; array describing #hidden
-                                   nodes per layer. eg [50,50,20] denotes 3 hidden
-                                   layers, with 50, 50 and 20 nodes. a value of []
-                                   denotes no MLP before classifier
-  --restore-ckpt RESTORE_CKPT      if set, restore from this ckpt file
-  --ckpt-dir CKPT_DIR              root dir to save ckpts. blank => don't save ckpts
-  --ckpt-freq CKPT_FREQ            frequency (in num batches trained) to dump ckpt to --ckpt-dir
-  --disable-gpu                    if set we only run on cpu
-  --initial-embeddings INITIAL     initial embeddings npy file. requires --vocab-file
-  --vocab-file VOCAB_FILE          vocab (token -> idx) for embeddings, required if using --initial-embeddings
-  --dont-train-embeddings          if set don't backprop to embeddings
+  --momentum MOMENTUM   momentum (for MomentumOptimizer)
+  --restore-ckpt RESTORE_CKPT
+                        if set, restore from this ckpt file
+  --ckpt-dir CKPT_DIR   root dir to save ckpts. blank => don't save ckpts
+  --ckpt-freq CKPT_FREQ
+                        frequency (in num batches trained) to dump ckpt to
+                        --ckpt-dir
+  --disable-gpu         if set we only run on cpu
+  --input-vocab-file INPUT_VOCAB_FILE
+                        vocab (token -> idx) for embeddings, required if using
+                        --initial-embeddings
+  --output-vocab-file OUTPUT_VOCAB_FILE
+                        derived vocab as updated from loading training data.
+                        used for nn_test
+  --seq-len SEQ_LEN     hack; need to do bucketing, for now just ignore long
+                        egs
+  --hidden-dim HIDDEN_DIM
+                        hidden node dimensionality
+  --embedding-dim EMBEDDING_DIM
+                        embedding node dimensionality
+  --mlp-config MLP_CONFIG
+                        pre classifier mlp config; array describing #hidden
+                        nodes per layer. eg [50,50,20] denotes 3 hidden
+                        layers, with 50, 50 and 20 nodes. a value of []
+                        denotes no MLP before classifier
+  --initial-embeddings INITIAL_EMBEDDINGS
+                        initial embeddings npy file. requires --vocab-file
+  --dont-train-embeddings
+                        if set don't backprop to embeddings
+```
+
+### small test runs
+
+`train_small.sh` and `test_small.sh` are two simple test harnesses for training a model
+over a small amoutn of data and then running test against the same set. (expected result
+is perfect result)
+
+```
+./train_small.sh
+./test_small.sh train_small/RUN_1449859909_3874/1449859926
+ [[8 0 0]
+ [0 5 0]
+ [- 0 7]] (1.0)
 ```
 
 ### precalculated embeddings
@@ -91,7 +125,7 @@ optional arguments:
 to use pretrained embeddings we first build a vocab mapping tokens -> row ids
 
 ```
-time cat data/snli_1.0_train.jsonl | ./generate_vocab_from_snli.py  > vocab.tsv
+time cat data/snli_1.0_train.jsonl | ./generate_vocab_from_snli.py  > glove/vocab.tsv
 ```
 
 we then convert glove embeddings to an npy matrix using the above vocab. for entries
@@ -101,7 +135,7 @@ is a zero vector.
 
 ```
 time ./convert_glove_embeddings.py \
- --vocab vocab.tsv \
+ --vocab glove/vocab.tsv \
  --glove-data glove/glove.6B.300d.txt \
  --npy glove/snli_glove.npy \
  --random-projection-dimensionality 100
@@ -111,3 +145,18 @@ using pretrained embeddings gives a big bump in initial convergence but randomly
 them (quite a bit) later on.
 
 ![baseline](imgs/v1.png?raw=true "baseline; random vs glove")
+
+## domain transfer
+
+exp
+
+distinct tokens from 1) snli 2) wiki and 3) glove embeddings
+
+```
+cat data/snli_1.0_{train,dev}.jsonl | ./s1_s2_tokens.py | sort -u > snli/tokens
+cut -f1 wiki/token_freq.tsv > wiki/tokens
+cut -f1 -d' ' glove/glove.6B.300d.txt > glove/tokens
+cat wiki.token_freq.tsv data/snli_1.0_{train,dev}.jsonl | ./s1_s2_tokens.py | sort -u > snli.tokens
+```
+
+./calculate_common_vocab.py --d1-tokens=snli.tokens --d2-tokens=wiki.tokens --e-tokens=glove/tokens --output-vocab=glove.snli_wiki.vocab

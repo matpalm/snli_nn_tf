@@ -1,6 +1,7 @@
 from collections import Counter
 import json
 import numpy as np
+import sys
 import time
 import tensorflow as tf
 
@@ -35,6 +36,9 @@ def label_for(eg):  # TODO: uber clumstastic :/
         return one_hot
     except ValueError:
         return None
+
+def log(s):
+    print >>sys.stderr, dts(), s
 
 def load_data(file, vocab, update_vocab, max_records, max_len, batch_size):
     stats = Counter()
@@ -99,7 +103,10 @@ def dts():
     return time.strftime("%Y-%m-%d %H:%M:%S")
 
 def mean_sd(v):
-    return {"mean": float(np.mean(v)), "sd": float(np.std(v))}
+    if len(v) == 0:
+        return None
+    else:
+        return {"mean": float(np.mean(v)), "sd": float(np.std(v))}
 
 def optimizer(opts):
     lr = float(opts.learning_rate)
@@ -114,3 +121,5 @@ def optimizer(opts):
         return tf.train.MomentumOptimizer(learning_rate=lr, momentum=m)
     else:
         raise Exception("unknown optimizer [%s]" % opts.optimizer)
+
+
